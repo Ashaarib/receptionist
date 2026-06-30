@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nawab – Receptionist Console</title>
+  <link rel="icon" type="image/png" href="./Logo.png?v=1">
+
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Global Black & Red Theme Overrides */
+    body,
+    html,
+    .receptionist-layout,
+    main.main-content,
+    .card,
+    .modal-box {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+    }
+
+    :root {
+      --primary: #e60000 !important;
+      --red: #e60000 !important;
+      --red-deep: #990000 !important;
+      --gold: #e60000 !important;
+      /* Unified highlight color to match Red theme */
+      --success: #e60000 !important;
+      --info: #e60000 !important;
+    }
+
+    /* Universal Button Override: Red background, White text */
+    button,
+    .btn,
+    .btn-primary,
+    .btn-ghost,
+    .btn-success,
+    .btn-danger,
+    .confirm-btn,
+    .take-order-btn {
+      background-color: #e60000 !important;
+      color: #ffffff !important;
+      border: 1px solid #e60000 !important;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+
+    button:hover,
+    .btn:hover {
+      background-color: #b30000 !important;
+      border-color: #b30000 !important;
+    }
+
+    .running-row td {
+      font-size: .83rem;
+    }
+
+    .check-cell {
+      white-space: nowrap;
+    }
+
+    /* --- FIX: Order ID Hover State Styling --- */
+.order-id-hover {
+  color: #ff3333 !important;
+  text-decoration: underline dashed #ff3333;
+  cursor: pointer !important;
+  font-weight: bold;
+  padding: 2px 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+.order-id-hover:hover {
+  color: #ffffff !important;
+  background-color: #ff3333 !important;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+    .timer-cell {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tab-badge {
+      background: var(--red);
+      color: #fff;
+      border-radius: 99px;
+      padding: .1rem .4rem;
+      font-size: .7rem;
+      font-weight: 700;
+      margin-left: .3rem;
+    }
+
+    .notif-bar {
+      background: rgba(230, 0, 0, .15);
+      border: 1px solid var(--red-deep);
+      border-radius: var(--radius);
+      padding: .6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      margin-bottom: 1rem;
+      font-size: .88rem;
+      animation: slideIn .3s ease;
+    }
+
+    .bill-print-area {
+      display: none;
+    }
+
+    /* Logo Container and Responsive Image Adjustment */
+    .brand-logo-container {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: var(--radius, 8px);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .brand-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Standardized non-scroll modal geometry layout rules */
+    .modal-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1100;
+    }
+
+    .modal-box {
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh;
+      width: 100%;
+      max-width: 500px;
+      background: #000000;
+      border: 1px solid #e60000;
+      border-radius: var(--radius, 8px);
+      position: relative;
+    }
+
+    .modal-box.modal-lg {
+      max-width: 850px;
+    }
+
+    .modal-header-sticky {
+      padding: 1.5rem 1.5rem 1rem 1rem;
+      flex-shrink: 0;
+    }
+
+    .modal-body-scroll {
+      padding: 0 1.5rem 1.5rem 1.5rem;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    /* Make input text fields legible in black theme */
+    .form-control,
+    input,
+    select,
+    textarea {
+      background-color: #1a1a1a !important;
+      color: #ffffff !important;
+      border: 1px solid #333 !important;
+    }
+
+    .data-table th {
+      background-color: #1a1a1a !important;
+      color: #ffffff !important;
+    }
+
+    .data-table td {
+      border-bottom: 1px solid #222 !important;
+    }
+
+    /* --- High-Density, Space-Reduced Receipt Layout --- */
+.bill-container {
+  padding: 0.3rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1.15 !important;
+  max-width: 270px !important; /* Compact horizontal sizing */
+  margin: 0 auto !important;
+  font-family: 'Courier New', Courier, monospace !important;
+}
+
+.bill-container h3 {
+  margin: 0 0 0.15rem 0 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.5px;
+}
+
+.bill-container hr {
+  margin: 0.2rem 0 !important;
+  border: none !important;
+  border-top: 1px dashed #000000 !important;
+}
+
+/* Enforce rigid 1-line layout across X/Y plane */
+.bill-row, .bill-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  white-space: nowrap !important; /* Stops text stacking down vertically */
+  gap: 6px !important;
+  margin-bottom: 0.1rem !important;
+}
+
+.bill-item-name {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 170px !important; /* Prevents item titles from breaking space borders */
+}
+  </style>
+</head>
+
+<body>
+
+  <div class="receptionist-layout">
+    <aside class="sidebar-nav" style="background-color: #111; border-right: 1px solid #222;">
+      <div class="sidebar-brand">
+        <div class="brand-logo-container">
+          <img src="Logo.png" alt="Nawab Logo" class="brand-image">
+        </div>
+        <div>
+          <div class="brand-name" style="font-size:1rem; color: #fff;">Nawab</div>
+          <div class="brand-tagline" style="color: var(--red);">Receptionist</div>
+        </div>
+      </div>
+
+      <div class="sidebar-nav-item active" onclick="showPage('running')" id="nav-running">
+        🔥 Running Orders <span class="sidebar-badge" id="runningBadge">0</span>
+      </div>
+      <div class="sidebar-nav-item" onclick="showPage('reservations')" id="nav-reservations">
+        🪑 Reservations <span class="sidebar-badge" id="rsvBadge">0</span>
+      </div>
+      <div class="sidebar-nav-item" onclick="showPage('dinein')" id="nav-dinein">
+        🍽️ Dine In <span class="sidebar-badge" id="dineBadge">0</span>
+      </div>
+      <div class="sidebar-nav-item" onclick="showPage('takeaway')" id="nav-takeaway">
+        🥡 Take Away <span class="sidebar-badge" id="taBadge">0</span>
+      </div>
+      <div class="sidebar-nav-item" onclick="showPage('delivery')" id="nav-delivery">
+        🚚 Delivery <span class="sidebar-badge" id="delBadge">0</span>
+      </div>
+      <div class="sidebar-nav-item" onclick="showPage('settled')" id="nav-settled">
+        ✅ Settled Orders
+      </div>
+      <div style="padding:1rem 1.5rem; border-top:1px solid #222; margin-top:auto;">
+        <a href="index.html" class="btn"
+          style="width:100%; margin-bottom:.5rem; display:block; text-align:center; text-decoration:none;">Customer
+          Page</a>
+        <a href="admin.html?from=receptionist" class="btn"
+          style="width:100%; display:block; text-align:center; text-decoration:none;">Admin Page</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="toast-container" id="toastContainer"></div>
+      <div id="notificationArea"></div>
+
+      <div id="page-running">
+        <div class="page-title" style="color: var(--red);">🔥 Running Orders</div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="btn" onclick="openWalkinModal()">
+            + New Walk-In Order
+          </button>
+          <button class="btn" onclick="openTableMgmtModal()">
+            ⚙️ Manage Tables
+          </button>
+        </div>
+
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table" id="runningTable">
+            <thead>
+  <tr>
+    <th>S.No</th>
+    <th>Order ID</th>
+    <th>Type</th>
+    <th>Table</th>
+    <th>Customer</th>
+    <th>Order Accepted</th>
+    <th>Order Prepared</th>
+    <th>Served / Dispatched</th>
+    <!-- This header remains generic but individual rows will hide/show the checkbox -->
+    <th>Delivered</th>
+    <th>Order Completed</th>
+    <th>Timer</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+            <tbody id="runningBody">
+              <tr>
+                <td colspan="11" class="text-grey text-center" style="padding:2rem;">No running orders</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="page-reservations" class="hidden">
+        <div class="page-title" style="color: var(--red);">🪑 Reservations</div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table" id="rsvTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Reservation ID</th>
+                <th>Customer Name</th>
+                <th>Cell No</th>
+                <th>Table</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Party</th>
+                <th>Reserved On</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rsvBody">
+              <tr>
+                <td colspan="11" class="text-grey text-center" style="padding:2rem;">No upcoming reservations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="page-dinein" class="hidden">
+        <div class="page-title" style="color: var(--red);">🍽️ Dine In Orders</div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table" id="dineTable">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Order ID</th>
+                <th>Table No</th>
+                <th>Time in Service</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dineBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="page-takeaway" class="hidden">
+        <div class="page-title" style="color: var(--red);">🥡 Take Away Orders</div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table" id="taTable">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Order ID</th>
+                <th>Time in Service</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="taBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="page-delivery" class="hidden">
+        <div class="page-title" style="color: var(--red);">🚚 Delivery Orders</div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table" id="delTable">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Order ID</th>
+                <th>Address</th>
+                <th>Time in Delivery</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="delBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="page-settled" class="hidden">
+        <div class="page-title" style="color: var(--red);">✅ Settled Orders</div>
+
+        <div style="display:flex;gap:.7rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
+          <label class="text-grey" style="font-size:.85rem;">Filter:</label>
+          <select class="form-control" id="settledFilter" style="width:auto;" onchange="filterSettled()">
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="fortnightly">Fortnightly</option>
+          </select>
+        </div>
+
+        <div class="card" style="overflow-x:auto;">
+          <table class="data-table" id="settledTable">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Order ID</th>
+                <th>Customer Name</th>
+                <th>Cell No</th>
+                <th>Type</th>
+                <th>Completed At</th>
+                <th>Order Amount</th>
+                <th>Running Total</th>
+              </tr>
+            </thead>
+            <tbody id="settledBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="6" style="text-align:right;font-weight:700;color:var(--red);padding:.7rem .8rem;">Daily
+                  Grand Total:</td>
+                <td colspan="2" style="font-weight:700;color:var(--red);padding:.7rem .8rem;" id="settledGrandTotal">Rs.
+                  0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="order-detail-panel" id="detailPanel" style="background-color: #111; border-left: 1px solid var(--red);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h4 style="font-family:var(--font-display);color:var(--red);">Order Details</h4>
+      <button onclick="closeDetailPanel()"
+        style="background:none;border:none;color:var(--grey);cursor:pointer;font-size:1.2rem;">✕</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+
+  <div class="modal-overlay hidden" id="tableMgmtModal">
+    <div class="modal-box">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('tableMgmtModal')">✕</button>
+        <div class="modal-title" style="color: var(--red);">Table Setup & Management</div>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div class="form-group">
+          <label>Modify Existing Active Table</label>
+          <select class="form-control" id="mgmtTableNo"
+            onchange="if(this.value){document.getElementById('mgmtNewTableNo').value='';}">
+            <option value="">-- Choose Existing Table --</option>
+          </select>
+        </div>
+
+        <div style="text-align:center; margin:.5rem 0; font-weight:bold; color:var(--red); font-size:0.85rem;">OR CREATE
+          NEW</div>
+
+        <div class="form-group">
+          <label>Add Brand New Table Number</label>
+          <input type="number" class="form-control" id="mgmtNewTableNo" min="1" placeholder="e.g. 15"
+            oninput="if(this.value){document.getElementById('mgmtTableNo').value='';}">
+        </div>
+
+        <div class="form-group">
+          <label>Seat Capacity</label>
+          <input type="number" id="mgmtTableCap" class="form-control" min="1" placeholder="e.g. 4">
+        </div>
+        <div class="form-group">
+          <label>Layout Status Profile</label>
+          <select class="form-control" id="mgmtTableStatus">
+            <option value="available">Available</option>
+            <option value="reserved">Reserved</option>
+            <option value="occupied">Occupied</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:0.5rem; margin-top:1.5rem;">
+          <button class="btn" style="width:100%;" onclick="submitTableModification()">Save Changes</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 1.5rem 0;">
+        <div
+          style="background: rgba(230, 0, 0, 0.05); border: 1px solid rgba(230, 0, 0, 0.2); padding: 1rem; border-radius: var(--radius);">
+          <div style="color: var(--red); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">⚠️ Danger Zone:
+            Delete Table</div>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label style="color: var(--grey);">Select Table to Remove</label>
+            <select class="form-control" id="deleteTableNo" style="border-color: rgba(230,0,0,0.3);">
+              <option value="">-- Choose Table to Delete --</option>
+            </select>
+          </div>
+          <button class="btn" style="width:100%;" onclick="submitTableDeletion()">
+            🗑️ Delete Table From Floor
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="timerModal">
+    <div class="modal-box">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('timerModal')">✕</button>
+        <div class="modal-title" style="color: var(--red);">Set Order Timer</div>
+      </div>
+      <div class="modal-body-scroll">
+        <p class="text-grey" style="margin-bottom:1rem;font-size:.9rem;">
+          Enter the estimated time (in minutes) for order service or delivery.
+        </p>
+        <div class="form-group">
+          <label>Estimated Time (minutes)</label>
+          <input type="number" class="form-control" id="timerMinutes" min="1" max="240" placeholder="e.g. 30">
+        </div>
+        <input type="hidden" id="timerOrderId">
+        <button class="btn" style="width:100%;" onclick="confirmTimer()">Start Timer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="riderModal">
+    <div class="modal-box">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('riderModal'); rollbackServedCheckbox();">✕</button>
+        <div class="modal-title" style="color: var(--red);">Assign Rider</div>
+      </div>
+      <div class="modal-body-scroll">
+        <p class="text-grey" style="margin-bottom:1rem;font-size:.9rem;">
+          Select a rider to dispatch this delivery order.
+        </p>
+        <div class="form-group">
+          <label>Select Rider</label>
+          <select class="form-control" id="riderSelect">
+            <option value="Rider 1">Rider 1</option>
+            <option value="Rider 2">Rider 2</option>
+            <option value="Rider 3">Rider 3</option>
+          </select>
+        </div>
+        <input type="hidden" id="riderOrderId">
+        <button class="btn" style="width:100%;" onclick="confirmRiderAssign()">Dispatch & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="walkinModal">
+    <div class="modal-box modal-lg">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('walkinModal')">✕</button>
+        <div class="modal-title" style="color: var(--red);">New Walk-In Dine-In Order</div>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div id="walkinStep1">
+          <p class="text-grey" style="margin-bottom:1rem;font-size:.9rem;">Select a table from the floor plan:</p>
+          <div class="table-selection-legend" style="font-size:.8rem;">
+            <span><span
+                style="display:inline-block;width:12px;height:12px;background:#990000;border-radius:3px;margin-right:.3rem;"></span>Tables</span>
+          </div>
+          <div class="floor-plan" id="walkinFloorPlan" style="height:380px;"></div>
+        </div>
+
+        <div id="walkinStep2" class="hidden">
+          <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;">
+            <button class="btn" onclick="showStep1()">← Back</button>
+            <span class="text-red" style="font-weight:700;" id="walkinTableLabel">Table: —</span>
+          </div>
+
+          <div class="input-row">
+            <div class="form-group">
+              <label>Customer Name</label>
+              <input type="text" class="form-control" id="wk_name" placeholder="Walk-in guest">
+            </div>
+            <div class="form-group">
+              <label>Cell Number</label>
+              <input type="tel" class="form-control" id="wk_phone">
+            </div>
+          </div>
+
+          <div class="card-header" style="margin-top:1rem; color: var(--red);">Select Items</div>
+          <div id="walkinMenuItems" style="max-height:300px;overflow-y:auto;"></div>
+
+          <div
+            style="margin-top:1rem;padding-top:1rem;border-top:1px solid #333;display:flex;justify-content:space-between;align-items:center;">
+            <span class="text-red" style="font-weight:700;">Grand Total:</span>
+            <span class="text-red" style="font-size:1.3rem;font-weight:700;" id="wkTotal">Rs. 0</span>
+          </div>
+          <button class="btn" style="width:100%;margin-top:1rem;" onclick="submitWalkinOrder()">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="takeOrderModal">
+    <div class="modal-box modal-lg">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('takeOrderModal')">✕</button>
+        <div class="modal-title" style="color: var(--red);">Take Order – <span id="toRsvId"></span></div>
+      </div>
+      <div class="modal-body-scroll">
+        <p class="text-grey" style="margin-bottom:1rem;font-size:.88rem;">Table: <span id="toTableLabel"
+            class="text-red"></span></p>
+        <div id="takeOrderMenuItems" style="max-height:350px;overflow-y:auto;"></div>
+        <div
+          style="margin-top:1rem;padding-top:1rem;border-top:1px solid #333;display:flex;justify-content:space-between;align-items:center;">
+          <span class="text-red" style="font-weight:700;">Grand Total:</span>
+          <span class="text-red" style="font-size:1.3rem;font-weight:700;" id="toTotal">Rs. 0</span>
+        </div>
+        <input type="hidden" id="toRsvIdHidden">
+        <button class="btn" style="width:100%;margin-top:1rem;" onclick="submitReservationOrder()">Place Reserved
+          Order</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="cancelModal">
+    <div class="modal-box">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('cancelModal')">✕</button>
+        <div class="modal-title" style="color: var(--red);">Cancel Order</div>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="form-group">
+          <label>Reason for Cancellation</label>
+          <textarea class="form-control" id="cancelReason" rows="3" placeholder="Enter reason…"></textarea>
+        </div>
+        <input type="hidden" id="cancelOrderId">
+        <button class="btn" style="width:100%;" onclick="confirmCancel()">Confirm Cancellation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="cancelReservationModal">
+    <div class="modal-box">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('cancelReservationModal')">✕</button>
+        <div class="modal-title" style="color: var(--red);">Cancel Reservation</div>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="form-group">
+          <label>Reason for Cancelling Reservation</label>
+          <textarea class="form-control" id="cancelReservationReason" rows="3" placeholder="Enter reason…"></textarea>
+        </div>
+        <input type="hidden" id="cancelReservationId">
+        <button class="btn" style="width:100%;" onclick="confirmReservationCancellation()">Confirm Cancellation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="billModal">
+    <div class="modal-box">
+      <div class="modal-header-sticky">
+        <button class="modal-close" onclick="closeModal('billModal')">✕</button>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="bill-container" id="billContent">
+        </div>
+        <button class="btn" style="width:100%;margin-top:1rem;" onclick="window.print()">🖨️ Print Bill</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    // ============================================================
+    //  NAVIGATION
+    // ============================================================
+
+    // Locate the loop or function that generates your Settled Orders list
+function renderSettledOrders() {
+  const tbody = document.getElementById('settledBody');
+  if (!tbody) return;
+
+  if (settledOrders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-grey text-center" style="padding:2rem;">No settled orders found</td></tr>';
+    document.getElementById('settledGrandTotal').innerText = 'Rs. 0';
+    return;
+  }
+
+  let totalSum = 0;
+
+  tbody.innerHTML = settledOrders.map((order, index) => {
+    const sNo = index + 1;
+    const orderAmount = Number(order.totalAmount || order.grandTotal || 0);
+    totalSum += orderAmount;
+
+    // Resolves phone layout formatting variants safely
+    const phoneDisplay = order.customerPhone || order.phone || order.cellNo || '—';
+
+    return `
+    <tr class="settled-row" 
+        onmouseenter="showOrderDetail('${order.id}', false)" 
+        onmouseleave="handleMouseLeaveDetail()">
+      <td><b>${sNo}</b></td>
+      <td>
+        <span class="order-id-hover" 
+              onclick="toggleLockOrderDetail('${order.id}')">
+          ${order.id}
+        </span>
+      </td>
+      <td>${order.customerName || 'Walk-in'}</td>
+      <td><span class="text-grey" style="font-size: 0.75rem; white-space: nowrap;">${phoneDisplay}</span></td>
+      <td><span class="badge ${typeof typeBadgeClass !== 'undefined' ? typeBadgeClass(order.type) : ''}">${order.type || '—'}</span></td>
+      <td>${formatTs(order.completedAt || order.settledAt)}</td>
+      <td>Rs. ${orderAmount.toLocaleString()}</td>
+      <td><b>Rs. ${totalSum.toLocaleString()}</b></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('settledGrandTotal').innerText = `Rs. ${totalSum.toLocaleString()}`;
+}
+
+function viewBill(orderId) {
+  const order = runningOrders.find(o => o.id === orderId) || settledOrders.find(o => o.id === orderId);
+  if (!order) return showToast('Order details not resolved.', 'error');
+
+  const phoneDisplay = order.customerPhone || order.phone || order.cellNo || '—';
+  const itemsHtml = (order.items || []).map(item => `
+    <div class="bill-item">
+      <span class="bill-item-name">${item.quantity}x ${item.name || item.title}</span>
+      <span>Rs. ${(Number(item.price) * Number(item.quantity)).toLocaleString()}</span>
+    </div>
+  `).join('');
+
+  const billContent = `
+    <div class="bill-container" style="font-family:'Courier New', Courier, monospace !important; color:#000000 !important; font-weight:600 !important; background-color:#ffffff !important; padding:10px; border-radius:4px;">
+      <h3 style="text-align:center; font-size:1.1rem; margin-bottom:0.1rem; color:#000000 !important;">NAWAB CAFE & RESTAURANT</h3>
+      <div style="text-align:center; font-size:0.75rem; color:#333; margin-bottom:0.4rem;">Kamra, Pakistan</div>
+      <hr style="border-top:1px dashed #000; background:none; margin:0.3rem 0;">
+      <div class="bill-row" style="color:#000 !important;"><span>Order ID:</span><span><b>${order.id}</b></span></div>
+      <div class="bill-row" style="color:#000 !important;"><span>Type:</span><span>${order.type?.toUpperCase()}</span></div>
+      <div class="bill-row" style="color:#000 !important;"><span>Customer:</span><span>${order.customerName || 'Walk-in'}</span></div>
+      <div class="bill-row" style="color:#000 !important;"><span>Phone:</span><span><b>${phoneDisplay}</b></span></div>
+      <hr style="border-top:1px dashed #000; background:none; margin:0.3rem 0;">
+      ${itemsHtml}
+      <hr style="border-top:1px dashed #000; background:none; margin:0.3rem 0;">
+      <div class="bill-row" style="font-size:0.9rem; font-weight:800; color:#000 !important;">
+        <span>Grand Total:</span>
+        <span>Rs. ${Number(order.totalAmount || order.grandTotal || 0).toLocaleString()}</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('billContent').innerHTML = billContent;
+  document.getElementById('billModal').classList.remove('hidden');
+}
+    function showPage(page) {
+      ['running', 'reservations', 'dinein', 'takeaway', 'delivery', 'settled'].forEach(p => {
+        document.getElementById('page-' + p).classList.add('hidden');
+        document.getElementById('nav-' + p)?.classList.remove('active');
+      });
+      document.getElementById('page-' + page).classList.remove('hidden');
+      document.getElementById('nav-' + page).classList.add('active');
+    }
+
+    // ============================================================
+    //  LIVE DATA LISTENERS
+    // ============================================================
+    let runningOrders = [];
+    let reservations = [];
+    let settledOrders = [];
+    let orderTimers = {};
+    let isPanelLocked = false;
+
+    let CUSTOM_TABLE_METRICS = [
+      { no: 1, cap: 2, x: 5, y: 5, w: 80, h: 60 }, { no: 2, cap: 2, x: 110, y: 5, w: 80, h: 60 },
+      { no: 3, cap: 4, x: 215, y: 5, w: 100, h: 70 }, { no: 4, cap: 4, x: 340, y: 5, w: 100, h: 70 },
+      { no: 5, cap: 6, x: 5, y: 95, w: 120, h: 80 }, { no: 6, cap: 6, x: 150, y: 95, w: 120, h: 80 },
+      { no: 7, cap: 8, x: 300, y: 95, w: 140, h: 90 }, { no: 8, cap: 2, x: 5, y: 210, w: 80, h: 60 },
+      { no: 9, cap: 4, x: 110, y: 210, w: 100, h: 70 }, { no: 10, cap: 6, x: 240, y: 210, w: 120, h: 80 },
+      { no: 11, cap: 8, x: 390, y: 210, w: 140, h: 90 }, { no: 12, cap: 4, x: 5, y: 315, w: 100, h: 70 },
+      { no: 13, cap: 4, x: 130, y: 315, w: 100, h: 70 }, { no: 14, cap: 6, x: 260, y: 315, w: 120, h: 80 },
+    ];
+
+    // Initialize Real-time Listeners
+    function initListeners() {
+    // 1. Establish Sync Listener on Tables Core Collection
+    db.collection('tables').orderBy('no', 'asc').onSnapshot(snapshot => {
+        window.localTables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }, error => console.error("Error subscribing to tables collection:", error));
+
+    // 2. Establish Sync Listener on active orders collection
+    db.collection('orders')
+        .where('status', 'in', ['placed', 'pending', 'accepted', 'prepared', 'served', 'delivered'])
+        .onSnapshot(snap => {
+            runningOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            runningOrders.sort((a, b) => {
+                const timestampA = a.createdAt?.seconds || 0;
+                const timestampB = b.createdAt?.seconds || 0;
+                return timestampB - timestampA;
+            });
+
+            runningOrders.forEach(order => {
+                if (order.estimatedMinutes && order.countdownStartedAt) {
+                    const elapsedSeconds = Math.floor((Date.now() - order.countdownStartedAt) / 1000);
+                    const totalSeconds = order.estimatedMinutes * 60;
+                    const remainingSeconds = totalSeconds - elapsedSeconds;
+
+                    if (!orderTimers[order.id]) {
+                        startCountdown(order.id, remainingSeconds);
+                    } else {
+                        orderTimers[order.id].remaining = remainingSeconds;
+                    }
+                }
+            });
+
+            renderRunningOrders();
+            renderCategoryTabs();
+            updateBadges();
+        }, err => {
+            console.error('Orders real-time engine listener error details:', err);
+            showToast('Firestore Engine Pipeline Interrupted.', 'error');
+        });
+
+    // 3. Establish Sync Listener on Settled/Completed Orders
+    db.collection('orders')
+        .where('status', '==', 'completed')
+        .onSnapshot(snap => {
+            settledOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            settledOrders.sort((a, b) => {
+                const tsA = a.completedAt?.seconds || 0;
+                const tsB = b.completedAt?.seconds || 0;
+                return tsB - tsA;
+            });
+
+            if (document.getElementById('page-settled') && !document.getElementById('page-settled').classList.contains('hidden')) {
+                filterSettled();
+            }
+        }, err => {
+            console.error('Settled orders real-time engine sync error:', err);
+        });
+
+    // 4. Establish Sync Listener on Reservations Collection (Filter active items only)
+    db.collection('reservations')
+        .where('status', 'in', ['pending', 'confirmed'])
+        .onSnapshot(snap => {
+            const rawReservations = snap.docs.map(d => ({ reservationId: d.id, ...d.data() }));
+            
+            // Sort chronologically based on reservation target execution times
+            rawReservations.sort((a, b) => {
+                const timeA = `${a.reservationDate} ${a.reservationTime}`;
+                const timeB = `${b.reservationDate} ${b.reservationTime}`;
+                return new Date(timeA) - new Date(timeB);
+            });
+
+            // Apply logic filter pipeline: Only show starting exactly 1 hour before scheduled time
+            const now = new Date();
+            reservations = rawReservations.filter(r => {
+                try {
+                    const targetDateTime = new Date(`${r.reservationDate} ${r.reservationTime}`);
+                    const visibleThresholdTime = new Date(targetDateTime.getTime() - (60 * 60 * 1000)); // Exactly 1 hour window
+                    return now >= visibleThresholdTime;
+                } catch (e) {
+                    return true; // Fallback to display item if date parsing errors occur
+                }
+            });
+
+            renderReservations();
+            updateBadges();
+            checkReservationAlerts();
+        }, err => {
+            console.error('Reservations real-time listener error details:', err);
+        });
+}
+    // ============================================================
+    //  TABLE MANAGEMENT & CAPACITY MODIFICATION (WITH DELETION)
+    // ============================================================
+    function openTableMgmtModal() {
+      if (document.getElementById('mgmtNewTableNo')) document.getElementById('mgmtNewTableNo').value = '';
+      document.getElementById('mgmtTableNo').value = '';
+      document.getElementById('mgmtTableCap').value = '';
+      document.getElementById('mgmtTableStatus').value = 'available';
+
+      const selectDropdown = document.getElementById('mgmtTableNo');
+      const deleteDropdown = document.getElementById('deleteTableNo');
+
+      selectDropdown.innerHTML = '<option value="">-- Choose Existing Table --</option>';
+      deleteDropdown.innerHTML = '<option value="">-- Choose Table to Delete --</option>';
+
+      db.collection('tables').get().then(snap => {
+        let activeTables = [];
+        snap.forEach(d => {
+          const data = d.data();
+          if (data && data.no) activeTables.push(data.no);
+        });
+
+        activeTables.sort((a, b) => a - b);
+
+        activeTables.forEach(num => {
+          const opt1 = document.createElement('option');
+          opt1.value = num;
+          opt1.textContent = `Table T${num}`;
+          selectDropdown.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = num;
+          opt2.textContent = `Table T${num}`;
+          deleteDropdown.appendChild(opt2);
+        });
+      }).catch(err => console.error("Error populating management list:", err));
+
+      document.getElementById('tableMgmtModal').classList.remove('hidden');
+    }
+
+    async function submitTableDeletion() {
+      const selectedTableStr = document.getElementById('deleteTableNo').value;
+      if (!selectedTableStr) {
+        return showToast('Please select a valid table number to delete', 'error');
+      }
+
+      const tableNo = parseInt(selectedTableStr);
+      const tableDocId = 'T' + tableNo;
+
+      let promptMsg = tableNo <= 15 ? `Are you sure you want to delete this permanent table (T${tableNo})?` : `Are you sure you want to delete this temporary created table (T${tableNo})?`;
+
+      if (!confirm(promptMsg)) return;
+
+      try {
+        await db.collection('tables').doc(tableDocId).delete();
+        closeModal('tableMgmtModal');
+        alert("Table deleted successfully!");
+        showToast(`Table ${tableDocId} was removed from the active grid layout grid`, 'success');
+      } catch (error) {
+        showToast("Failed to delete the selected layout element: " + error.message, 'error');
+      }
+    }
+
+    async function submitTableModification() {
+      const existingNo = document.getElementById('mgmtTableNo').value;
+      const newNo = document.getElementById('mgmtNewTableNo').value.trim();
+      const cap = parseInt(document.getElementById('mgmtTableCap').value);
+      const status = document.getElementById('mgmtTableStatus').value;
+
+      if (!existingNo && !newNo) return showToast('Please select an existing table or specify a new table number', 'error');
+      if (!cap || cap < 1) return showToast('Please enter a valid seat capacity', 'error');
+
+      const finalTableNo = existingNo ? parseInt(existingNo) : parseInt(newNo);
+      const tableDocId = 'T' + finalTableNo;
+
+      try {
+        const existingMetrics = (typeof CUSTOM_TABLE_METRICS !== 'undefined') ? CUSTOM_TABLE_METRICS.find(t => t.no === finalTableNo) : null;
+
+        await db.collection('tables').doc(tableDocId).set({
+          no: finalTableNo,
+          capacity: cap,
+          status: status,
+          x: existingMetrics ? (existingMetrics.x || 50) : 50,
+          y: existingMetrics ? (existingMetrics.y || 50) : 50,
+          w: existingMetrics ? (existingMetrics.w || 100) : 100,
+          h: existingMetrics ? (existingMetrics.h || 70) : 70
+        }, { merge: true });
+
+        closeModal('tableMgmtModal');
+        showToast(`Table T${finalTableNo} successfully saved!`, 'success');
+
+        document.getElementById('mgmtNewTableNo').value = '';
+        document.getElementById('mgmtTableNo').value = '';
+      } catch (e) {
+        showToast('Failed to apply table layout adjustment: ' + e.message, 'error');
+      }
+    }
+
+    // ============================================================
+    //  RUNNING ORDERS TABLE
+    // ============================================================
+    function renderRunningOrders() {
+  const tbody = document.getElementById('runningBody');
+  if (!tbody) return;
+  if (runningOrders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" class="text-grey text-center" style="padding:2rem;">No running orders</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = runningOrders.map((order, index) => {
+    const timerInfo = orderTimers[order.id];
+    const timerDisplay = timerInfo ? 
+      `<span class="countdown ${timerInfo.remaining <= 0 ? 'danger' : timerInfo.remaining <= 300 ? 'danger' : timerInfo.remaining <= 900 ? 'warning' : ''}">${formatSeconds(timerInfo.remaining)}</span>` : 
+      `<button class="btn" onclick="openTimerModal('${order.id}')">Set Timer</button>`;
+
+    const isDineIn = order.type === 'dine-in' || order.type === 'reserved-dine-in';
+    const isDelivery = order.type?.toLowerCase() === 'delivery';
+    const sNo = index + 1;
+
+    if (order.sNo !== sNo) {
+      db.collection('orders').doc(order.id).update({ sNo: sNo }).catch(e => console.error(e));
+    }
+
+    const phoneDisplay = order.customerPhone || order.phone || order.cellNo || '';
+
+    return `
+    <tr id="row-${order.id}" class="${getRowClass(order.id)}">
+      <td><b>${sNo}</b></td>
+      <td>
+        <span class="order-id-hover" 
+              onmouseenter="showOrderDetail('${order.id}', false)" 
+              onmouseleave="handleMouseLeaveDetail()" 
+              onclick="toggleLockOrderDetail('${order.id}')">
+          ${order.id}
+        </span>
+      </td>
+      <td><span class="badge ${typeBadgeClass(order.type)}">${order.type || '—'}</span></td>
+      <td>${isDineIn ? (order.tableNo || '—') : '—'}</td>
+      <td>${order.customerName || 'Walk-in'}<br><span class="text-grey" style="font-size:.75rem;">${phoneDisplay}</span></td>
+      
+      <td class="check-cell">
+        <label class="custom-check ${order.acceptedAt ? 'done' : ''}">
+          <input type="checkbox" ${order.acceptedAt ? 'checked disabled' : ''} onchange="markStatus('${order.id}','accepted',this)"> Accepted
+        </label>
+      </td>
+      <td class="check-cell">
+        <label class="custom-check ${order.preparedAt ? 'done' : ''}">
+          <input type="checkbox" ${order.preparedAt ? 'checked disabled' : ''} onchange="markStatus('${order.id}','prepared',this)"> Prepared
+        </label>
+      </td>
+      <td class="check-cell">
+        <label class="custom-check ${order.servedAt ? 'done' : ''}">
+          <input type="checkbox" ${order.servedAt ? 'checked disabled' : ''} onchange="markStatus('${order.id}','served',this)"> Served/Dispatched
+        </label>
+      </td>
+      <td class="check-cell">
+        ${isDelivery ? `
+          <label class="custom-check ${order.deliveredAt ? 'done' : ''}">
+            <input type="checkbox" ${order.deliveredAt ? 'checked disabled' : ''} onchange="markStatus('${order.id}','delivered',this)"> Delivered
+          </label>
+        ` : '<span class="text-grey">—</span>'}
+      </td>
+      <td class="check-cell">
+        <label class="custom-check ${order.completedAt ? 'done' : ''}">
+          <input type="checkbox" ${order.completedAt ? 'checked' : ''} ${order.completedAt ? 'disabled' : ''} 
+            ${(!order.servedAt || (isDelivery && !order.deliveredAt)) ? 'disabled' : ''} 
+            onchange="markStatus('${order.id}','completed',this)"> Completed
+        </label>
+      </td>
+      <td class="timer-cell">${timerDisplay}</td>
+      <td>
+        <button class="btn" onclick="openCancelModal('${order.id}')">Cancel</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+    function getRowClass(orderId) {
+      const timer = orderTimers[orderId];
+      if (!timer) return '';
+      if (timer.remaining <= 300) return 'row-red';
+      if (timer.remaining <= 900) return 'row-yellow';
+      return '';
+    }
+
+    function typeBadgeClass(type) {
+      return 'badge-red';
+    }
+
+    // ============================================================
+    //  STATUS UPDATES
+    // ============================================================
+    async function markStatus(orderId, statusKey, checkbox) {
+  const targetOrder = runningOrders.find(o => o.id === orderId);
+  if (!targetOrder) return;
+
+  const isDelivery = targetOrder.type?.toLowerCase() === 'delivery';
+  const isDineInOrTA = targetOrder.type === 'dine-in' || targetOrder.type === 'reserved-dine-in' || targetOrder.type === 'takeaway';
+
+  // Strict structural step constraint flow rules
+  if (statusKey === 'completed') {
+    if (!targetOrder.servedAt) {
+      if (checkbox) checkbox.checked = false;
+      return showToast("Cannot complete order before it is Served/Dispatched!", "error");
+    }
+    if (isDelivery && !targetOrder.deliveredAt) {
+      if (checkbox) checkbox.checked = false;
+      return showToast("Delivery orders must be marked Delivered before Completion!", "error");
+    }
+  }
+
+  const sequence = ['accepted', 'prepared', 'served', 'delivered', 'completed'];
+  const currentIdx = sequence.indexOf(statusKey);
+  if (currentIdx > 0) {
+    const prevKey = sequence[currentIdx - 1];
+    if (prevKey === 'delivered' && !isDelivery) {
+      if (!targetOrder['servedAt']) {
+        if (checkbox) checkbox.checked = false;
+        return showToast("Please complete the previous step first!", "error");
+      }
+    } else if (!targetOrder[prevKey + 'At']) {
+      if (checkbox) checkbox.checked = false;
+      return showToast("Please complete the previous step first!", "error");
+    }
+  }
+
+  if (statusKey === 'served' && isDelivery) {
+    document.getElementById('riderOrderId').value = orderId;
+    window.currentServedCheckbox = checkbox;
+    document.getElementById('riderModal').classList.remove('hidden');
+    return;
+  }
+
+  if (checkbox) checkbox.disabled = true;
+  if (statusKey === 'accepted') {
+    openTimerModal(orderId);
+  }
+
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+  const user = auth.currentUser;
+  const atField = statusKey + 'At';
+  const byField = statusKey + 'By';
+
+  let updateFields = {
+    [atField]: now,
+    [byField]: user ? user.email : 'receptionist'
+  };
+
+  if (statusKey === 'completed') {
+    updateFields['status'] = 'completed';
+  } else {
+    updateFields['status'] = statusKey;
+  }
+
+  // Calculate and record latetime metric when milestone target checkbox is checked
+  if ((isDineInOrTA && statusKey === 'served') || (isDelivery && statusKey === 'delivered')) {
+    const timer = orderTimers[orderId];
+    if (timer && timer.remaining < 0) {
+      updateFields['latetime'] = Math.abs(timer.remaining); // saves the total late seconds elapsed
+    }
+  }
+
+  try {
+    await db.collection('orders').doc(orderId).update(updateFields);
+    showToast(`Order step '${statusKey}' registered successfully.`, 'success');
+  } catch (error) {
+    if (checkbox) {
+      checkbox.checked = false;
+      checkbox.disabled = false;
+    }
+    showToast("Firestore updates failed: " + error.message, 'error');
+  }
+}
+
+    async function confirmRiderAssign() {
+      const orderId = document.getElementById('riderOrderId').value;
+      const rider = document.getElementById('riderSelect').value;
+      const checkbox = window.currentServedCheckbox;
+
+      closeModal('riderModal');
+      if (checkbox) checkbox.disabled = true;
+
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      const user = auth.currentUser;
+
+      let updateData = {
+        servedAt: now,
+        servedBy: user ? user.email : 'receptionist',
+        riderName: rider,
+        status: 'served'
+      };
+
+      try {
+        await db.collection('orders').doc(orderId).update(updateData);
+        await rtdb.ref(`/live_orders/${orderId}/servedAt`).set(Date.now());
+        await rtdb.ref(`/live_orders/${orderId}/status`).set('served');
+        await rtdb.ref(`/live_orders/${orderId}/riderName`).set(rider);
+
+        if (checkbox) {
+          checkbox.parentElement.classList.add('done');
+        }
+        showToast(`Order ${orderId} dispatched with ${rider}`, 'success');
+      } catch (e) {
+        showToast('Error assigning rider: ' + e.message, 'error');
+        if (checkbox) {
+          checkbox.checked = false;
+          checkbox.disabled = false;
+          checkbox.parentElement.classList.remove('done');
+        }
+      }
+    }
+
+    function rollbackServedCheckbox() {
+      if (window.currentServedCheckbox) {
+        window.currentServedCheckbox.checked = false;
+        window.currentServedCheckbox.disabled = false;
+        window.currentServedCheckbox.parentElement.classList.remove('done');
+      }
+    }
+
+    // ============================================================
+    //  TIMER
+    // ============================================================
+    function openTimerModal(orderId) {
+      document.getElementById('timerOrderId').value = orderId;
+      document.getElementById('timerMinutes').value = '';
+      document.getElementById('timerModal').classList.remove('hidden');
+    }
+
+    async function confirmTimer() {
+  const orderId = document.getElementById('timerOrderId').value;
+  const minutes = parseInt(document.getElementById('timerMinutes').value);
+
+  if (!minutes || minutes < 1) {
+    return showToast('Please enter valid minutes', 'error');
+  }
+
+  const startTime = Date.now();
+  const now = new Date();
+  
+  // Calculate expected time (Current Time + user-input minutes)
+  const expectedDate = new Date(now.getTime() + minutes * 60 * 1000);
+
+  try {
+    await db.collection('orders').doc(orderId).update({
+      estimatedMinutes: minutes,
+      countdownStartedAt: startTime,
+      estimatedPrepTime: minutes, // Explicit numerical field save
+      ordertime: firebase.firestore.Timestamp.fromDate(now), // Saved placed/start time
+      exceptedtime: firebase.firestore.Timestamp.fromDate(expectedDate) // Saved expected target completion time
+    });
+
+    await rtdb.ref(`/live_orders/${orderId}`).update({
+      estimatedMinutes: minutes,
+      countdownStartedAt: startTime
+    });
+
+    startCountdown(orderId, minutes * 60);
+    closeModal('timerModal');
+    showToast(`Timer set: ${minutes} minutes for order ${orderId}`, 'success');
+  } catch (error) {
+    console.error("Error updating timer traces:", error);
+    showToast("Failed to lock tracking milestones.", "error");
+  }
+}
+
+    function startCountdown(orderId, seconds) {
+  if (orderTimers[orderId] && orderTimers[orderId].interval) {
+    clearInterval(orderTimers[orderId].interval);
+  }
+
+  orderTimers[orderId] = {
+    remaining: seconds,
+    interval: setInterval(() => {
+      const order = runningOrders.find(o => o.id === orderId);
+      if (!order) {
+        clearInterval(orderTimers[orderId].interval);
+        delete orderTimers[orderId];
+        return;
+      }
+
+      const isDelivery = order.type?.toLowerCase() === 'delivery';
+      const isDineInOrTA = order.type === 'dine-in' || order.type === 'reserved-dine-in' || order.type === 'takeaway';
+      
+      // Stop timer and prevent order from being late if milestones are met
+      const milestoneReached = (isDineInOrTA && order.servedAt) || (isDelivery && order.deliveredAt);
+      if (milestoneReached) {
+        clearInterval(orderTimers[orderId].interval);
+        return; 
+      }
+
+      // Count down down past zero into negative numbers
+      orderTimers[orderId].remaining--;
+      
+      const row = document.getElementById(`row-${orderId}`);
+      if (row) {
+        const timerCell = row.querySelector('.timer-cell');
+        if (timerCell) {
+          timerCell.innerHTML = `<span class="countdown ${orderTimers[orderId].remaining <= 0 ? 'danger' : ''}">
+            ${formatSeconds(orderTimers[orderId].remaining)}
+          </span>`;
+        }
+      }
+
+      // Alert when timer first drops below 0
+      if (orderTimers[orderId].remaining === -1) {
+        showToast(`Order ${orderId} for ${order.customerName || 'Walk-in'} is late!`, 'error');
+        if (typeof playAlertSound === 'function') playAlertSound();
+      }
+    }, 1000)
+  };
+}
+
+function formatSeconds(totalSeconds) {
+  const isNegative = totalSeconds < 0;
+  const absSeconds = Math.abs(totalSeconds);
+  const hrs = Math.floor(absSeconds / 3600);
+  const mins = Math.floor((absSeconds % 3600) / 60);
+  const secs = absSeconds % 60;
+
+  let displayStr = "";
+  if (hrs > 0) displayStr += `${hrs.toString().padStart(2, '0')}:`;
+  displayStr += `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  
+  return isNegative ? `-${displayStr}` : displayStr;
+}
+
+    // ============================================================
+    //  CANCEL ORDER
+    // ============================================================
+    function openCancelModal(orderId) {
+      document.getElementById('cancelOrderId').value = orderId;
+      document.getElementById('cancelReason').value = '';
+      document.getElementById('cancelModal').classList.remove('hidden');
+    }
+
+    async function confirmCancel() {
+      const orderId = document.getElementById('cancelOrderId').value;
+      const reason = document.getElementById('cancelReason').value.trim() || 'Receptionist Manual Abort Execution';
+      try {
+        const targetOrder = runningOrders.find(o => o.id === orderId) || {};
+
+        await db.collection('orders').doc(orderId).update({
+          status: 'cancelled',
+          cancelledAt: Date.now(),
+          cancellationReason: reason
+        });
+
+        await rtdb.ref(`/live_orders/${orderId}`).update({
+          status: 'cancelled',
+          cancelledAt: Date.now()
+        });
+
+        if (targetOrder && targetOrder.tableNo) {
+          await db.collection('tables').doc('T' + targetOrder.tableNo).update({ status: 'available' });
+        }
+
+        closeModal('cancelModal');
+        showToast(`Order line execution successfully cancelled`, 'success');
+      } catch (e) {
+        showToast(`Cancellation error: ` + e.message, 'error');
+      }
+    }
+
+    // ============================================================
+    //  ORDER DETAIL PANEL
+    // ============================================================
+    function handleMouseLeaveDetail() {
+      if (!isPanelLocked) {
+        closeDetailPanel();
+      }
+    }
+
+    function toggleLockOrderDetail(orderId) {
+      isPanelLocked = true;
+      showOrderDetail(orderId, true);
+    }
+
+    function showOrderDetail(orderId, forceLock = false) {
+  if (isPanelLocked && !forceLock) return; 
+
+  const order = runningOrders.find(o => o.id === orderId) || settledOrders.find(o => o.id === orderId);
+  if (!order) return;
+
+  const phoneDisplay = order.customerPhone || order.phone || order.cellNo || '—';
+  
+  // Safe item fallback property extractor
+  const itemsHtml = (order.items || []).map(item => {
+    const itemName = item.name || item.title || 'Unknown Item';
+    const itemQty = Number(item.quantity || item.qty || 0);
+    const itemPrice = Number(item.price || 0);
+    return `
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.85rem;">
+        <span>${itemQty}x ${itemName}</span>
+        <span style="color:#e60000; font-weight:700;">Rs. ${(itemPrice * itemQty).toLocaleString()}</span>
+      </div>
+    `;
+  }).join('');
+
+  const grandTotalAmount = Number(order.totalAmount || order.grandTotal || 0);
+
+  document.getElementById('detailContent').innerHTML = `
+    <div style="padding:0.5rem; color:#fff;">
+      <div style="margin-bottom:0.8rem; border-bottom:1px solid #222; padding-bottom:0.5rem;">
+        <div style="font-size:0.8rem; color:#888;">Order ID Status</div>
+        <div style="font-weight:bold; font-size:1.05rem; color:#e60000;">${order.id} [${(order.status || 'open').toUpperCase()}]</div>
+      </div>
+      <div style="margin-bottom:0.8rem; font-size:0.85rem;">
+        <div><b>Customer:</b> ${order.customerName || 'Walk-in'}</div>
+        <div><b>Phone Number:</b> <span style="color:#aaa;">${phoneDisplay}</span></div>
+        <div><b>Type Profile:</b> ${String(order.type || '—').toUpperCase()}</div>
+        ${order.tableNo ? `<div><b>Table Room:</b> T${order.tableNo}</div>` : ''}
+      </div>
+      <div style="border-top:1px dashed #333; padding-top:0.8rem; margin-top:0.8rem;">
+        <h5 style="color:#e60000; margin-bottom:0.5rem; font-weight:bold; letter-spacing:0.5px;">ITEMS ORDERED</h5>
+        ${itemsHtml || '<div class="text-grey">No items linked to this order</div>'}
+      </div>
+      <div style="border-top:1px dashed #333; padding-top:0.8rem; margin-top:0.8rem; display:flex; justify-content:space-between; font-weight:bold;">
+        <span>Grand Balance:</span>
+        <span style="color:#e60000; font-size:1.05rem;">Rs. ${grandTotalAmount.toLocaleString()}</span>
+      </div>
+      <button class="btn" style="width:100%; margin-top:1rem;" onclick="viewBill('${order.id}')">📋 View/Print Full Bill</button>
+    </div>
+  `;
+
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function toggleLockOrderDetail(orderId) {
+  showOrderDetail(orderId, true);
+  isPanelLocked = true;
+  document.getElementById('detailPanel').style.borderColor = "#ffffff"; 
+}
+
+function closeDetailPanel() {
+  isPanelLocked = false;
+  document.getElementById('detailPanel').style.borderColor = "var(--red)"; 
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+function handleMouseLeaveDetail() {
+  if (!isPanelLocked) {
+    document.getElementById('detailPanel').classList.remove('open');
+  }
+}
+
+    function printBillDirectly(orderId) {
+      showBill(orderId);
+    }
+
+    // ============================================================
+    //  CATEGORY TABS (Dine In, Takeaway, Delivery)
+    // ============================================================
+    function renderCategoryTabs() {
+      const dineOrders = runningOrders.filter(o => o.type?.toLowerCase().includes('dine'));
+      const taOrders = runningOrders.filter(o => o.type?.toLowerCase().includes('takeaway') || o.type?.toLowerCase() === 't');
+      const delOrders = runningOrders.filter(o => (o.type?.toLowerCase().includes('delivery') || o.type?.toLowerCase() === 'd') && o.status !== 'delivered');
+
+      renderCategoryTable('dineBody', dineOrders, 'dine');
+      renderCategoryTable('taBody', taOrders, 'ta');
+      renderCategoryTable('delBody', delOrders, 'del');
+    }
+
+    function renderCategoryTable(tbodyId, orders, type) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-grey text-center" style="padding:1rem;">No orders</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map((o, i) => {
+        let timerDisplay = '—';
+
+        if (orderTimers[o.id]) {
+          const timerInfo = orderTimers[o.id];
+          timerDisplay = `<span class="countdown">${formatSeconds(timerInfo.remaining)}</span>`;
+        }
+        else if (o.createdAt) {
+          const createdDate = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+          const elapsedMs = new Date() - createdDate;
+          const elapsedMins = Math.floor(elapsedMs / 60000);
+          timerDisplay = `<span class="text-grey">${elapsedMins}m elapsed</span>`;
+        }
+
+        return `
+    <tr>
+      <td>${i + 1}</td>
+      <td><span class="order-id-hover" onmouseenter="showOrderDetail('${o.id}')" onmouseleave="handleMouseLeaveDetail()">${o.id}</span></td>
+      ${type === 'dine' ? `<td>T${o.tableNo || '—'}</td>` : ''}
+      ${type === 'del' ? `<td style="font-size:.8rem;">${o.deliveryAddress || '—'}</td>` : ''}
+      <td class="timer-cell">${timerDisplay}</td>
+      <td><span class="badge badge-red">${o.status}</span></td>
+    </tr>`;
+      }).join('');
+    }
+
+    // ============================================================
+    //  RESERVATIONS MODAL INTERFACE
+    // ============================================================
+    function renderReservations() {
+      const tbody = document.getElementById('rsvBody');
+      if (reservations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-grey text-center" style="padding:2rem;">No upcoming reservations within the 1-hour active window</td></tr>';
+        return;
+      }
+      
+      // Dynamic index tracker ensures rendering outputs strictly follow sequential numbering 1, 2, 3, etc.
+      tbody.innerHTML = reservations.map((r, i) => `
+    <tr>
+      <td><b>${i + 1}</b></td>
+      <td class="text-red" style="font-weight:700;font-size:.8rem;">${r.reservationId}</td>
+      <td>${r.customerName}</td>
+      <td>${r.phone}</td>
+      <td>T${r.tableNo} (${r.capacity || '?'} seats)</td>
+      <td>${r.reservationDate}</td>
+      <td>${r.reservationTime}</td>
+      <td>${r.partySize}</td>
+      <td style="font-size:.78rem;">${formatTs(r.reservedOn)}</td>
+      <td><span class="badge badge-red">${r.status}</span></td>
+      <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        ${r.status === 'pending' ? `
+          <button class="btn" onclick="confirmReservation('${r.reservationId}')">✓ Confirm</button>
+          <button class="btn" onclick="cancelReservation('${r.reservationId}')">✕ Cancel</button>
+        ` : ''}
+        ${r.status === 'confirmed' ? `
+          <button class="btn" onclick="openTakeOrder('${r.reservationId}')">📝 Take Order</button>
+        ` : ''}
+      </td>
+    </tr>`).join('');
+    }
+
+    async function confirmReservation(rsvId) {
+      await db.collection('reservations').doc(rsvId).update({ status: 'confirmed' });
+      showToast(`Reservation ${rsvId} confirmed`, 'success');
+    }
+
+    function cancelReservation(rsvId) {
+      document.getElementById('cancelReservationId').value = rsvId;
+      document.getElementById('cancelReservationReason').value = '';
+      document.getElementById('cancelReservationModal').classList.remove('hidden');
+    }
+
+    async function confirmReservationCancellation() {
+      const rsvId = document.getElementById('cancelReservationId').value;
+      const reason = document.getElementById('cancelReservationReason').value.trim();
+      
+      if (!reason) {
+        return showToast('Please provide a reason for cancelling this reservation', 'error');
+      }
+
+      const rsv = reservations.find(r => r.reservationId === rsvId);
+
+      try {
+        await db.collection('reservations').doc(rsvId).update({
+          status: 'cancelled',
+          cancellationReason: reason
+        });
+
+        if (rsv?.tableNo) {
+          await db.collection('tables').doc('T' + rsv.tableNo).update({ status: 'available' });
+        }
+        
+        closeModal('cancelReservationModal');
+        showToast(`Reservation ${rsvId} cancelled, reason saved.`, 'success');
+      } catch (err) {
+        showToast('Failed to cancel reservation: ' + err.message, 'error');
+      }
+    }
+
+    // ============================================================
+    //  TAKE ORDER FROM RESERVATION
+    // ============================================================
+    let takeOrderCart = [];
+    let currentRsvId = null;
+
+    async function openTakeOrder(rsvId) {
+      currentRsvId = rsvId;
+      takeOrderCart = [];
+      const rsv = reservations.find(r => r.reservationId === rsvId);
+      document.getElementById('toRsvId').textContent = rsvId;
+      document.getElementById('toRsvIdHidden').value = rsvId;
+      document.getElementById('toTableLabel').textContent = `T${rsv?.tableNo} — ${rsv?.customerName}`;
+      renderTakeOrderMenu();
+      document.getElementById('takeOrderModal').classList.remove('hidden');
+    }
+
+    function renderTakeOrderMenu() {
+      const container = document.getElementById('takeOrderMenuItems');
+      let html = '';
+      Object.entries(SAMPLE_MENU).forEach(([cat, items]) => {
+        html += `<div class="card-header" style="margin-top:.5rem; color: var(--red);">${cat}</div>`;
+        items.forEach(item => {
+          const inCart = takeOrderCart.find(c => c.id === item.id);
+          const qty = inCart ? inCart.qty : 0;
+          html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #333;font-size:.88rem;">
+        <div>
+          <div style="font-weight:600;">${item.emoji} ${item.name}</div>
+          <div class="text-red">Rs. ${item.price}</div>
+        </div>
+        <div class="qty-control">
+          <button class="btn" style="padding:0.1rem 0.5rem;" onclick="changeTOCartQty('${item.id}','${item.name}',${item.price},-1)">−</button>
+          <span class="qty-val" style="margin: 0 0.5rem;">${qty}</span>
+          <button class="btn" style="padding:0.1rem 0.5rem;" onclick="changeTOCartQty('${item.id}','${item.name}',${item.price},1)">+</button>
+        </div>
+      </div>`;
+        });
+      });
+      container.innerHTML = html;
+      updateTOTotal();
+    }
+
+    function changeTOCartQty(id, name, price, delta) {
+      const idx = takeOrderCart.findIndex(c => c.id === id);
+      if (idx < 0) { if (delta > 0) takeOrderCart.push({ id, name, price, qty: 1 }); }
+      else {
+        takeOrderCart[idx].qty += delta;
+        if (takeOrderCart[idx].qty <= 0) takeOrderCart.splice(idx, 1);
+      }
+      renderTakeOrderMenu();
+    }
+
+    function updateTOTotal() {
+      const total = takeOrderCart.reduce((s, c) => s + c.qty * c.price, 0);
+      document.getElementById('toTotal').textContent = `Rs. ${total.toLocaleString()}`;
+    }
+
+    async function submitReservationOrder() {
+      if (takeOrderCart.length === 0) return showToast('Please add items', 'error');
+      const rsv = reservations.find(r => r.reservationId === currentRsvId);
+
+      try {
+        const orderId = await window.generateOrderId('RDi');
+        const grandTotal = takeOrderCart.reduce((s, c) => s + c.qty * c.price, 0);
+
+        const orderData = {
+          orderId, prefix: 'RDi', type: 'reserved-dine-in',
+          reservationId: currentRsvId,
+          customerId: rsv?.customerId || null,
+          customerName: rsv?.customerName, phone: rsv?.phone,
+          tableNo: rsv?.tableNo,
+          items: takeOrderCart.map(c => ({ itemId: c.id, itemName: c.name, qty: c.qty, rate: c.price, amount: c.qty * c.price })),
+          grandTotal,
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('orders').doc(orderId).set(orderData);
+        await db.collection('reservations').doc(currentRsvId).update({ status: 'seated' });
+        await db.collection('tables').doc('T' + rsv?.tableNo).update({ status: 'occupied' });
+        await rtdb.ref(`/live_orders/${orderId}`).set({ status: 'pending' });
+
+        closeModal('takeOrderModal');
+        showToast(`Order ${orderId} placed for reservation ${currentRsvId}`, 'success');
+      } catch (err) {
+        showToast('Failed to create reservation order: ' + err.message, 'error');
+      }
+    }
+
+    // ============================================================
+    //  WALK-IN ORDER
+    // ============================================================
+    let walkinCart = [];
+    let walkinTableNo = null;
+    const SAMPLE_MENU = {
+      'Starters': [
+        { id: 'm1', name: 'Seekh Kabab', price: 650, emoji: '🍢' },
+        { id: 'm2', name: 'Shami Kabab', price: 550, emoji: '🥩' },
+        { id: 'm3', name: 'Samosa Platter', price: 350, emoji: '🫔' },
+      ],
+      'Main Course': [
+        { id: 'm4', name: 'Nihari', price: 950, emoji: '🍲' },
+        { id: 'm5', name: 'Karahi Gosht', price: 1100, emoji: '🥘' },
+        { id: 'm6', name: 'Chicken Biryani', price: 750, emoji: '🍛' },
+        { id: 'm7', name: 'Butter Chicken', price: 900, emoji: '🍗' },
+      ],
+      'Breads': [
+        { id: 'm8', name: 'Naan', price: 80, emoji: '🫓' },
+        { id: 'm9', name: 'Paratha', price: 100, emoji: '🫓' },
+        { id: 'm10', name: 'Roghni Naan', price: 120, emoji: '🫓' },
+      ],
+      'Beverages': [
+        { id: 'm11', name: 'Lassi (Sweet)', price: 200, emoji: '🥛' },
+        { id: 'm12', name: 'Rooh Afza', price: 150, emoji: '🍹' },
+        { id: 'm13', name: 'Kashmiri Chai', price: 250, emoji: '🍵' },
+      ],
+      'Desserts': [
+        { id: 'm14', name: 'Gulab Jamun', price: 300, emoji: '🍮' },
+        { id: 'm15', name: 'Kheer', price: 280, emoji: '🍮' },
+      ]
+    };
+
+    function openWalkinModal() {
+      walkinCart = [];
+      walkinTableNo = null;
+      document.getElementById('wk_name').value = '';
+      document.getElementById('wk_phone').value = '';
+      document.getElementById('walkinStep1').classList.remove('hidden');
+      document.getElementById('walkinStep2').classList.add('hidden');
+      document.getElementById('walkinModal').classList.remove('hidden');
+      renderFloorPlanReceptionist('walkinFloorPlan', (tbl) => {
+        walkinTableNo = tbl.no;
+        document.getElementById('walkinTableLabel').textContent = `Table: T${tbl.no} (${tbl.cap} seats)`;
+        document.getElementById('walkinStep1').classList.add('hidden');
+        document.getElementById('walkinStep2').classList.remove('hidden');
+        renderWalkinMenu();
+      });
+    }
+
+    function showStep1() {
+      document.getElementById('walkinStep1').classList.remove('hidden');
+      document.getElementById('walkinStep2').classList.add('hidden');
+    }
+
+    function renderFloorPlanReceptionist(containerId, onSelect) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = '';
+      const STANDARD_W = 100;
+      const STANDARD_H = 60;
+
+      db.collection('tables').get().then(snap => {
+        const databaseTables = {};
+        snap.forEach(d => { databaseTables[d.id] = d.data(); });
+
+        let unifiedLayoutList = [];
+        CUSTOM_TABLE_METRICS.forEach(tbl => {
+          unifiedLayoutList.push({ ...tbl, w: STANDARD_W, h: STANDARD_H });
+        });
+
+        Object.keys(databaseTables).forEach(id => {
+          const numericId = parseInt(id.replace('T', ''));
+          if (!unifiedLayoutList.some(t => t.no === numericId)) {
+            unifiedLayoutList.push({
+              no: numericId,
+              cap: databaseTables[id].capacity || 4,
+              w: STANDARD_W,
+              h: STANDARD_H,
+            });
+          }
+        });
+
+        unifiedLayoutList.forEach((tbl, index) => {
+          const tablesPerLine = 5;
+          const xGap = 150;
+          const yGap = 110;
+          const offsetMultiplier = index % tablesPerLine;
+          const rowMultiplier = Math.floor(index / tablesPerLine);
+          tbl.x = 5 + (offsetMultiplier * xGap);
+          tbl.y = 5 + (rowMultiplier * yGap);
+        });
+
+        unifiedLayoutList.forEach(tbl => {
+          const dbRecord = databaseTables['T' + tbl.no];
+          const status = dbRecord?.status || 'available';
+          const seatCapacity = dbRecord?.capacity || tbl.cap;
+
+          const div = document.createElement('div');
+          div.className = `floor-table ${status}`;
+          div.style.cssText = `left:${tbl.x}px;top:${tbl.y}px;width:${tbl.w}px;height:${tbl.h}px;position:absolute;border:1px solid #e60000;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;`;
+          div.innerHTML = `<span class="table-no">T${tbl.no}</span><span class="cap-label" style="font-size:0.7rem;color:#aaa;">${seatCapacity} seats</span>`;
+
+          div.onclick = () => onSelect({ no: tbl.no, cap: seatCapacity });
+          container.appendChild(div);
+        });
+      }).catch((err) => {
+        console.error("Error reading floor statuses:", err);
+      });
+    }
+
+    function renderWalkinMenu() {
+      const container = document.getElementById('walkinMenuItems');
+      let html = '';
+      Object.entries(SAMPLE_MENU).forEach(([cat, items]) => {
+        html += `<div class="card-header" style="margin-top:.5rem; color: var(--red);">${cat}</div>`;
+        items.forEach(item => {
+          const inCart = walkinCart.find(c => c.id === item.id);
+          const qty = inCart ? inCart.qty : 0;
+          html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #333;font-size:.88rem;">
+        <div><div style="font-weight:600;">${item.emoji} ${item.name}</div>
+             <div class="text-red">Rs. ${item.price}</div></div>
+        <div class="qty-control">
+          <button class="btn" style="padding:0.1rem 0.5rem;" onclick="changeWkQty('${item.id}','${item.name}',${item.price},-1)">−</button>
+          <span class="qty-val" style="margin: 0 0.5rem;">${qty}</span>
+          <button class="btn" style="padding:0.1rem 0.5rem;" onclick="changeWkQty('${item.id}','${item.name}',${item.price},1)">+</button>
+        </div>
+      </div>`;
+        });
+      });
+      container.innerHTML = html;
+      updateWkTotal();
+    }
+
+    function changeWkQty(id, name, price, delta) {
+      const idx = walkinCart.findIndex(c => c.id === id);
+      if (idx < 0) { if (delta > 0) walkinCart.push({ id, name, price, qty: 1 }); }
+      else {
+        walkinCart[idx].qty += delta;
+        if (walkinCart[idx].qty <= 0) walkinCart.splice(idx, 1);
+      }
+      renderWalkinMenu();
+    }
+
+    function updateWkTotal() {
+      const total = walkinCart.reduce((s, c) => s + c.qty * c.price, 0);
+      document.getElementById('wkTotal').textContent = `Rs. ${total.toLocaleString()}`;
+    }
+
+    // ============================================================
+//  SUbMIT WALKIN ORDER (FIXED SYNTAX ERROR)
+// ============================================================
+async function submitWalkinOrder() {
+  if (!walkinTableNo) return showToast('No table selected', 'error');
+  if (walkinCart.length === 0) return showToast('Add items to order', 'error');
+  const name = document.getElementById('wk_name').value.trim() || 'Walk-in';
+  const phone = document.getElementById('wk_phone').value.trim();
+
+  try {
+    const orderId = await window.generateOrderId('Di');
+    const grandTotal = walkinCart.reduce((s, c) => s + c.qty * c.price, 0);
+
+    const orderObj = {
+      id: orderId,
+      type: 'Dine-In',
+      tableNo: walkinTableNo,
+      customerName: name,
+      customerPhone: phone,
+      items: walkinCart,
+      grandTotal: grandTotal,
+      status: 'accepted',
+      
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('orders').doc(orderId).set(orderObj);
+    
+    // Update structural layout map matrix status elements immediately 
+    await db.collection('tables').doc(`T${walkinTableNo}`).set({ status: 'occupied' }, { merge: true });
+
+    closeModal('walkinModal');
+    showToast(`Walk-in dine-in order ${orderId} initialized live!`, 'success');
+    
+    if (typeof initListeners === 'function') initListeners();
+  } catch (e) {
+    showToast('Walkin injection error structural trace: ' + e.message, 'error');
+  }
+}
+
+    // ============================================================
+    //  BILL GENERATION
+    // ============================================================
+    async function showBill(orderId) {
+      const order = runningOrders.find(o => o.id === orderId)
+        || settledOrders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const itemRows = (order.items || []).map(i => {
+        const itemRate = i.rate || i.price || 0;
+        const itemAmount = i.amount || (i.qty * itemRate);
+        return `
+    <tr>
+      <td style="color: #000; text-align: left;">${i.itemName || i.name || 'Delicious Item'}</td>
+      <td style="text-align:center; color: #000;">${i.qty}</td>
+      <td style="text-align:right; color: #000;">Rs.${itemRate.toLocaleString()}</td>
+      <td style="text-align:right; color: #000;">Rs.${itemAmount.toLocaleString()}</td>
+    </tr>`;
+      }).join('');
+
+      document.getElementById('billContent').innerHTML = `
+    <div class="bill-header" style="color: #000; text-align: center;">
+      <h2 style="color: #000; margin-bottom: 0.2rem;">Nawab Restaurant</h2>
+      <p style="font-size:.8rem;color:#555; margin-top: 0;">Fine Dining · Kamra, Pakistan<br>Tel: +92 300 0000000</p>
+    </div>
+    <table class="bill-table" style="width: 100%; color: #000; font-size: 0.85rem; margin-bottom: 1rem;">
+      <tr><td><b>Order ID:</b></td><td>${order.orderId || order.id}</td></tr>
+      <tr><td><b>Customer:</b></td><td>${order.customerName || 'Walk-in'}</td></tr>
+      <tr><td><b>Phone:</b></td><td>${order.phone || '—'}</td></tr>
+      ${order.tableNo ? `<tr><td><b>Table:</b></td><td>T${order.tableNo}</td></tr>` : ''}
+      <tr><td><b>Type:</b></td><td>${order.type}</td></tr>
+      <tr><td><b>Date:</b></td><td>${new Date().toLocaleDateString('en-PK')}</td></tr>
+    </table>
+    <hr style="border: 0; border-top: 1px dashed #000; margin:.8rem 0;">
+    <table style="width: 100%; color: #000; font-size: 0.85rem; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid #000;">
+          <th style="text-align: left; background: none !important; color: #000 !important;">Item</th>
+          <th style="text-align: center; background: none !important; color: #000 !important;">Qty</th>
+          <th style="text-align: right; background: none !important; color: #000 !important;">Rate</th>
+          <th style="text-align: right; background: none !important; color: #000 !important;">Total</th>
+        </tr>
+      </thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <hr style="border: 0; border-top: 1px dashed #000; margin:.8rem 0;">
+    <div style="text-align: right; font-weight: bold; font-size: 1.1rem; color: #000;">Grand Total: Rs. ${order.grandTotal?.toLocaleString()}</div>
+    <p style="text-align:center;font-size:.75rem;margin-top:1.5rem;color:#555;">Thank you for dining at Nawab!<br>Please visit again.</p>`;
+
+      document.getElementById('billModal').classList.remove('hidden');
+    }
+
+    // =========================================================
+    //  SETTLED ORDERS
+    // ============================================================
+    // =========================================================
+    //  SETTLED ORDERS
+    // ============================================================
+  function filterSettled() {
+
+  const filterVal = document.getElementById('settledFilter').value;
+
+  let filtered = [...settledOrders];
+
+  const parseDate = (ts) => {
+    if (!ts) return null;
+
+    if (typeof ts.toDate === 'function') return ts.toDate();
+
+    if (ts.seconds) return new Date(ts.seconds * 1000);
+
+    return new Date(ts);
+  };
+
+  if (filterVal === "today") {
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    filtered = settledOrders.filter(order => {
+
+      const ts = order.completedAt || order.settledAt || order.createdAt;
+      const d = parseDate(ts);
+
+      return d && d >= today && d < tomorrow;
+
+    });
+
+  }
+
+  else if (filterVal === "week") {
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    filtered = settledOrders.filter(order => {
+
+      const ts = order.completedAt || order.settledAt || order.createdAt;
+      const d = parseDate(ts);
+
+      return d && d >= oneWeekAgo;
+
+    });
+
+  }
+
+  else if (filterVal === "fortnightly") {
+
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+    filtered = settledOrders.filter(order => {
+
+      const ts = order.completedAt || order.settledAt || order.createdAt;
+      const d = parseDate(ts);
+
+      return d && d >= fifteenDaysAgo;
+
+    });
+
+  }
+
+  console.log("Filter:", filterVal, filtered.length);
+
+  renderSettledTableRows(filtered);
+
+}
+
+function renderSettledTableRows(ordersList) {
+  const tbody = document.getElementById('settledBody');
+  if (!tbody) return;
+
+  if (!ordersList || ordersList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-grey text-center" style="padding:2rem;">No settled orders matching criteria</td></tr>';
+    document.getElementById('settledGrandTotal').innerText = 'Rs. 0';
+    return;
+  }
+
+  let totalSum = 0;
+  tbody.innerHTML = ordersList.map((order, index) => {
+    const sNo = index + 1;
+    const orderAmount = Number(order.totalAmount || order.grandTotal || 0);
+    totalSum += orderAmount;
+    
+    const phoneDisplay = order.customerPhone || order.phone || order.cellNo || '—';
+    const badgeClass = typeof typeBadgeClass === 'function' ? typeBadgeClass(order.type) : '';
+
+    return `
+    <tr class="settled-row" 
+        onmouseenter="showOrderDetail('${order.id}', false)" 
+        onmouseleave="handleMouseLeaveDetail()">
+      <td><b>${sNo}</b></td>
+      <td>
+        <span class="order-id-hover" onclick="toggleLockOrderDetail('${order.id}')">
+          ${order.id}
+        </span>
+      </td>
+      <td>${order.customerName || 'Walk-in'}</td>
+      <td><span class="text-grey" style="font-size: 0.75rem; white-space: nowrap;">${phoneDisplay}</span></td>
+      <td><span class="badge ${badgeClass}">${order.type || '—'}</span></td>
+      <td>${formatTs(order.completedAt || order.settledAt)}</td>
+      <td>Rs. ${orderAmount.toLocaleString()}</td>
+      <td><b>Rs. ${totalSum.toLocaleString()}</b></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('settledGrandTotal').innerText = `Rs. ${totalSum.toLocaleString()}`;
+}
+
+function formatTs(ts) {
+  if (!ts) return '—';
+  const d = (typeof ts.toDate === 'function') ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
+  return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-PK');
+}
+
+// Standardized Utility block fix for date string outputs
+function formatTs(ts) {
+  if (!ts) return '—';
+  const d = (typeof ts.toDate === 'function') ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
+  return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-PK');
+}
+
+    async function showSettledDetail(orderId) {
+      const order = settledOrders.find(o => o.id === orderId);
+      if (order) showOrderDetail(orderId, false);
+    }
+    // ============================================================
+    //  BADGES
+    // ============================================================
+    function updateBadges() {
+      document.getElementById('runningBadge').textContent = runningOrders.length;
+      document.getElementById('rsvBadge').textContent = reservations.length;
+      document.getElementById('dineBadge').textContent = runningOrders.filter(o => o.type === 'dine-in' || o.type === 'reserved-dine-in').length;
+      document.getElementById('taBadge').textContent = runningOrders.filter(o => o.type === 'takeaway').length;
+      document.getElementById('delBadge').textContent = runningOrders.filter(o => o.type === 'delivery').length;
+    }
+    // ============================================================
+    //  RESERVATION ALERTS
+    // ============================================================
+    function checkReservationAlerts() {
+      reservations.forEach(r => {
+        if (r.status === 'pending' && !r._alerted) {
+          addNotification(`New Reservation: <b>${r.reservationId}</b> — ${r.customerName} — Table T${r.tableNo}`);
+          playNotificationSound();
+          r._alerted = true;
+        }
+      });
+    }
+    function addNotification(msg) {
+      const area = document.getElementById('notificationArea');
+      const div = document.createElement('div');
+      div.className = 'notif-bar';
+      div.innerHTML = `🔔 ${msg} <button style="margin-left:auto;background:none;border:none;color:var(--grey);cursor:pointer;" onclick="this.parentElement.remove()">✕</button>`;
+      area.prepend(div);
+      setTimeout(() => div.remove(), 30000);
+    }
+    function playNotificationSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      } catch (e) { }
+    }
+    // ============================================================
+    //  UTILITIES
+    // ============================================================
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toastContainer');
+      if (!c) return;
+      const d = document.createElement('div');
+      d.className = `toast`;
+      d.style.cssText = "background: #e60000; color: #fff; padding: 0.5rem 1rem; margin-bottom: 0.5rem; border-radius: 4px; font-size: 0.9rem;";
+      d.innerHTML = `<b>ℹ</b> ${msg}`;
+      c.appendChild(d);
+      setTimeout(() => d.remove(), 4000);
+    }
+    function formatTs(ts) {
+      if (!ts) return '—';
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleString('en-PK');
+    }
+    auth.onAuthStateChanged(user => {
+      initListeners();
+    });
+    window.generateOrderId = async function (prefix) {
+      const ts = Date.now().toString().slice(-6);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      return `${prefix}-${ts}-${rand}`;
+    };
+  </script>
+</body>
+
+</html>
